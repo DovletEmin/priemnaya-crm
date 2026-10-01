@@ -14,6 +14,8 @@ from app.services import seed_tags
 from app.web_utils import LoginRequired
 
 logging.basicConfig(level=logging.INFO)
+# httpx логирует полный URL запроса, а в URL Bot API лежит токен — не пускаем его в логи
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 ROOT = Path(__file__).resolve().parent.parent
 
