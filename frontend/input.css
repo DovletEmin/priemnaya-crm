@@ -1,0 +1,83 @@
+@import "tailwindcss";
+@source "../app/templates";
+/* Классы статусов собираются в шаблонах динамически (bg-st-{{ status }}) — сканер их не видит */
+@source inline("bg-st-{new,in_progress,won,lost}");
+
+@theme {
+  --font-display: "Unbounded", system-ui, sans-serif;
+  --font-sans: "Onest", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-paper: #F6F7F9;
+  --color-surface: #FFFFFF;
+  --color-ink: #15171C;
+  --color-ink-2: #3A3F4B;
+  --color-muted: #6B7180;
+  --color-line: #E4E6EB;
+  --color-tg: #229ED9;
+
+  --color-st-new: #229ED9;
+  --color-st-in_progress: #E0930B;
+  --color-st-won: #12A594;
+  --color-st-lost: #9AA0AC;
+  --color-danger: #D93F3F;
+}
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body { @apply bg-paper text-ink font-sans text-[15px] leading-relaxed; }
+  :focus-visible { outline: 2px solid var(--color-tg); outline-offset: 2px; border-radius: 6px; }
+  ::selection { background: color-mix(in srgb, var(--color-tg) 22%, transparent); }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 h-9 text-sm font-medium
+      transition-colors whitespace-nowrap cursor-pointer select-none;
+  }
+  .btn-primary { @apply bg-ink text-white hover:bg-ink-2; }
+  .btn-ghost { @apply text-ink-2 hover:bg-black/5; }
+  .btn-outline { @apply border border-line bg-surface text-ink hover:border-ink/30; }
+  .btn-danger { @apply text-danger hover:bg-danger/10; }
+
+  .input {
+    @apply w-full rounded-lg border border-line bg-surface px-3 h-10 text-[15px] text-ink
+      placeholder:text-muted/70 transition-colors outline-none
+      focus:border-ink/40 focus:ring-4 focus:ring-ink/5;
+  }
+  textarea.input { @apply h-auto py-2.5 leading-relaxed; }
+  .field-label { @apply block text-[13px] font-medium text-ink-2 mb-1.5; }
+  .field-error { @apply text-[13px] text-danger mt-1.5; }
+
+  .card { @apply bg-surface border border-line rounded-xl; }
+  .eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted; }
+
+  /* Тег: цвет приходит из БД через --c, оттенки считаем в CSS */
+  .chip {
+    --c: #6B7180;
+    @apply inline-flex items-center gap-1.5 rounded-md px-2 h-6 text-[12.5px] font-medium leading-none whitespace-nowrap;
+    background: color-mix(in srgb, var(--c) 12%, white);
+    color: color-mix(in srgb, var(--c) 78%, black);
+  }
+  .chip::before {
+    content: ""; @apply size-1.5 rounded-full shrink-0;
+    background: var(--c);
+  }
+
+  .status-dot { @apply inline-block size-2 rounded-full shrink-0; }
+
+  .nav-link {
+    @apply flex items-center gap-2.5 rounded-lg px-2.5 h-9 text-[14px] text-ink-2 hover:bg-black/5 transition-colors;
+  }
+  .nav-link[aria-current="page"] { @apply bg-surface text-ink font-medium shadow-[0_0_0_1px_var(--color-line)]; }
+}
+
+/* Воронка: ширина сегмента пропорциональна числу лидов в статусе */
+.pipeline-seg { flex: var(--grow) 1 0; min-width: 7.5rem; }
+
+.htmx-request.htmx-indicator, .htmx-request .htmx-indicator { opacity: 1; }
+.htmx-indicator { opacity: 0; transition: opacity .15s; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}

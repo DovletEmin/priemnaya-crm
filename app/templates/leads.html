@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}Лиды{% endblock %}
+{% block content %}
+<header class="flex flex-wrap items-end justify-between gap-4 mb-7">
+  <div>
+    <h1 class="font-display font-semibold text-[26px] tracking-tight leading-tight">
+      {% if active_tag %}Лиды с тегом <span class="chip align-middle text-[15px] h-7 px-2.5" style="--c: {{ active_tag.color }}">{{ active_tag.name }}</span>{% else %}Лиды{% endif %}
+    </h1>
+    {% if active_tag %}<a href="{{ leads_url(f, tag=None) }}" class="text-[13px] text-muted hover:text-ink">Показать все теги</a>{% endif %}
+  </div>
+  <a href="/leads/new" class="btn btn-primary">{{ icon("plus") }} Новый лид</a>
+</header>
+
+<form id="filters" class="flex flex-wrap gap-2 mb-5"
+      hx-get="/leads" hx-target="#results" hx-push-url="true"
+      hx-trigger="input changed delay:250ms from:#q, change">
+  <input type="hidden" name="status" id="f-status" value="{{ f.status }}">
+  {% if f.tag %}<input type="hidden" name="tag" value="{{ f.tag }}">{% endif %}
+  <label class="relative w-full sm:w-auto sm:flex-1 sm:min-w-[220px]">
+    <span class="sr-only">Поиск</span>
+    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">{{ icon("search") }}</span>
+    <input id="q" name="q" value="{{ f.q }}" class="input pl-9" placeholder="Имя, контакт или текст запроса" autocomplete="off">
+  </label>
+  <select name="source" class="input flex-1 sm:flex-none sm:w-auto pr-8" aria-label="Источник">
+    <option value="">Все источники</option>
+    {% for key, label in Source.LABELS.items() %}
+    <option value="{{ key }}" {% if f.source == key %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select class="input flex-1 sm:flex-none sm:w-auto pr-8 lg:hidden" aria-label="Тег" onchange="location.href = this.value">
+    <option value="{{ leads_url(f, tag=None) }}">Все теги</option>
+    {% for tag, cnt in sidebar_tags %}
+    <option value="{{ leads_url(f, tag=tag.id) }}" {% if f.tag == tag.id %}selected{% endif %}>{{ tag.name }} · {{ cnt }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div id="results">
+  {% include "partials/leads_results.html" %}
+</div>
+{% endblock %}

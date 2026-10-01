@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}Теги{% endblock %}
+{% block content %}
+<div class="max-w-[720px]">
+  <h1 class="font-display font-semibold text-[26px] tracking-tight mb-1">Теги</h1>
+  <p class="text-muted mb-7">Помечайте лидов тегами, чтобы потом видеть их одним списком. Тег можно создать и прямо в карточке лида.</p>
+
+  <form method="post" action="/tags" class="card p-5 mb-6">
+    <div class="flex flex-wrap items-end gap-3">
+      <div class="flex-1 min-w-[200px]">
+        <label class="field-label" for="tag-name">Новый тег</label>
+        <input class="input" id="tag-name" name="name" placeholder="Например, «лендинг»" maxlength="50" required>
+      </div>
+      <fieldset>
+        <legend class="field-label">Цвет</legend>
+        <div class="flex gap-1.5 h-10 items-center">
+          {% for c in colors %}
+          <label class="cursor-pointer">
+            <input type="radio" name="color" value="{{ c }}" class="peer sr-only" {% if loop.first %}checked{% endif %}>
+            <span class="block size-6 rounded-full ring-2 ring-transparent ring-offset-2 peer-checked:ring-ink peer-focus-visible:ring-tg" style="background: {{ c }}"></span>
+            <span class="sr-only">{{ c }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <button class="btn btn-primary h-10">{{ icon("plus") }} Создать</button>
+    </div>
+    {% if error %}<p class="field-error" role="alert">{{ error }}</p>{% endif %}
+  </form>
+
+  {% if sidebar_tags %}
+  <ul class="card divide-y divide-line">
+    {% for tag, cnt in sidebar_tags %}
+    <li class="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5">
+      <a href="/leads?tag={{ tag.id }}" class="chip h-7 px-2.5 text-[14px] hover:brightness-95" style="--c: {{ tag.color }}">{{ tag.name }}</a>
+      <a href="/leads?tag={{ tag.id }}" class="text-[13px] text-muted hover:text-ink">{{ cnt }} {{ "лид" if cnt % 10 == 1 and cnt % 100 != 11 else ("лида" if cnt % 10 in [2,3,4] and cnt % 100 not in [12,13,14] else "лидов") }}</a>
+
+      <form method="post" action="/tags/{{ tag.id }}/color" class="ml-auto flex gap-1" aria-label="Цвет тега {{ tag.name }}">
+        {% for c in colors %}
+        <button name="color" value="{{ c }}" class="size-4 rounded-full ring-2 ring-offset-1 {{ 'ring-ink' if c|lower == tag.color|lower else 'ring-transparent hover:ring-line' }}" style="background: {{ c }}" title="Сменить цвет"></button>
+        {% endfor %}
+      </form>
+      <form method="post" action="/tags/{{ tag.id }}/delete" onsubmit='return confirm({{ ("Удалить тег «" ~ tag.name ~ "»? С лидов он тоже снимется.")|tojson }})'>
+        <button class="btn btn-ghost px-2 h-8 text-muted hover:text-danger" aria-label="Удалить тег {{ tag.name }}">{{ icon("trash", "size-3.5") }}</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="card px-6 py-12 text-center text-muted">Тегов пока нет — создайте первый выше.</div>
+  {% endif %}
+</div>
+{% endblock %}

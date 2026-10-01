@@ -1,0 +1,65 @@
+{% from "_macros.html" import icon %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Приёмная{% endblock %} · Приёмная</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%2315171C'/><path d='M9 22V10h7a4 4 0 0 1 0 8h-7' stroke='white' stroke-width='3' fill='none'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Onest:wght@400;500;600&family=Unbounded:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+{% block body %}
+{% set path = request.url.path %}
+<div class="min-h-dvh lg:grid lg:grid-cols-[248px_1fr]">
+
+  <aside class="border-b lg:border-b-0 lg:border-r border-line lg:h-dvh lg:sticky lg:top-0 flex flex-col">
+    <div class="flex items-center justify-between px-4 lg:px-5 h-14 lg:h-16">
+      <a href="/leads" class="font-display font-semibold text-[17px] tracking-tight">Приёмная</a>
+      <form method="post" action="/logout" class="lg:hidden">
+        <button class="btn btn-ghost px-2" title="Выйти">{{ icon("logout") }}</button>
+      </form>
+    </div>
+
+    <nav class="flex lg:flex-col gap-1 px-3 pb-3 lg:pb-0 overflow-x-auto" aria-label="Разделы">
+      <a href="/leads" class="nav-link" {% if path.startswith("/leads") %}aria-current="page"{% endif %}>
+        {{ icon("inbox") }} Лиды <span class="ml-auto pl-3 font-mono text-[12px] text-muted">{{ total_leads }}</span>
+      </a>
+      <a href="/tags" class="nav-link" {% if path == "/tags" %}aria-current="page"{% endif %}>{{ icon("tag") }} Теги</a>
+      <a href="/settings" class="nav-link" {% if path == "/settings" %}aria-current="page"{% endif %}>{{ icon("settings") }} Подключения</a>
+    </nav>
+
+    <div class="hidden lg:block mt-7 px-3 flex-1 overflow-y-auto">
+      <div class="eyebrow px-2.5 mb-2">Лиды по тегам</div>
+      <ul class="space-y-0.5">
+        {% for tag, cnt in sidebar_tags %}
+        <li>
+          <a href="/leads?tag={{ tag.id }}"
+             class="flex items-center gap-2.5 rounded-lg px-2.5 h-8 text-[14px] hover:bg-black/5 {% if active_tag and active_tag.id == tag.id %}bg-black/5 font-medium{% endif %}">
+            <span class="size-2 rounded-full shrink-0" style="background: {{ tag.color }}"></span>
+            <span class="truncate">{{ tag.name }}</span>
+            <span class="ml-auto font-mono text-[12px] text-muted">{{ cnt }}</span>
+          </a>
+        </li>
+        {% else %}
+        <li class="px-2.5 text-[13px] text-muted">Тегов пока нет</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <form method="post" action="/logout" class="hidden lg:block p-3 border-t border-line">
+      <button class="nav-link w-full">{{ icon("logout") }} Выйти</button>
+    </form>
+  </aside>
+
+  <main class="min-w-0 px-4 py-6 sm:px-8 lg:px-10 lg:py-9">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}
+</body>
+</html>

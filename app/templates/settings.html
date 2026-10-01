@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, tg_logo %}
+{% block title %}Подключения{% endblock %}
+{% block content %}
+<div class="max-w-[760px] space-y-6">
+  <div>
+    <h1 class="font-display font-semibold text-[26px] tracking-tight mb-1">Подключения</h1>
+    <p class="text-muted">Откуда приходят лиды и кому бот сообщает о новых заявках.</p>
+  </div>
+
+  {% if message %}
+  <div class="card px-5 py-3 text-[14px] {{ 'border-danger/40 text-danger' if message.startswith('Ошибка') else 'border-st-won/40' }}" role="status">{{ message }}</div>
+  {% endif %}
+
+  {# ---------- Бот ---------- #}
+  {% set webhook_ok = webhook and webhook.url == expected_webhook %}
+  <section class="card p-6">
+    <div class="flex items-start gap-4">
+      <span class="grid place-items-center size-10 rounded-xl bg-tg/10 text-tg shrink-0">{{ tg_logo("size-5") }}</span>
+      <div class="flex-1 min-w-0">
+        <h2 class="font-display font-medium text-[17px]">Telegram-бот для заявок</h2>
+        {% if not has_token %}
+          <p class="text-[14px] text-muted mt-1">Бот не настроен: укажите <code class="font-mono text-[13px]">BOT_TOKEN</code> в переменных окружения.</p>
+        {% elif bot_error %}
+          <p class="text-[14px] text-danger mt-1">Telegram не принял токен: {{ bot_error }}</p>
+        {% else %}
+          <p class="text-[14px] mt-1">
+            <a href="https://t.me/{{ bot.username }}" target="_blank" rel="noopener" class="text-tg hover:underline">@{{ bot.username }}</a>
+            <span class="text-muted">· {{ bot.first_name }}</span>
+          </p>
+          <p class="text-[14px] mt-3 flex items-center gap-2">
+            {% if webhook_ok %}
+              <span class="status-dot bg-st-won"></span> Принимает заявки
+            {% else %}
+              <span class="status-dot bg-st-in_progress"></span> Не получает сообщения — подключите бота к этому адресу CRM
+            {% endif %}
+          </p>
+          {% if webhook and webhook.last_error_message %}
+            <p class="text-[13px] text-danger mt-1">Последняя ошибка доставки: {{ webhook.last_error_message }}</p>
+          {% endif %}
+          <form method="post" action="/settings/webhook" class="mt-4">
+            <button class="btn {{ 'btn-outline' if webhook_ok else 'btn-primary' }}">{{ "Переподключить" if webhook_ok else "Подключить бота" }}</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {# ---------- Уведомления ---------- #}
+  <section class="card p-6">
+    <h2 class="font-display font-medium text-[17px]">Уведомления о новых лидах</h2>
+    <p class="text-[14px] text-muted mt-1">
+      Менеджер пишет боту
+      {% if manager_code %}<code class="font-mono text-[13px] text-ink bg-paper border border-line rounded px-1.5 py-0.5">/manager {{ manager_code }}</code>{% else %}<code class="font-mono text-[13px]">/manager &lt;код&gt;</code> (код не задан — укажите MANAGER_CODE){% endif %}
+      — и получает сообщение о каждой новой заявке со ссылкой на карточку.
+    </p>
+    {% if managers %}
+    <ul class="mt-4 divide-y divide-line border-y border-line">
+      {% for m in managers %}
+      <li class="flex items-center gap-3 py-2.5 text-[14px]">
+        {{ icon("user", "size-4 text-muted") }}
+        <span>{{ m.name or "Без имени" }}</span>
+        <span class="text-muted text-[12.5px]">с {{ m.created_at|human_time }}</span>
+        <form method="post" action="/settings/managers/{{ m.chat_id }}/delete" class="ml-auto">
+          <button class="btn btn-ghost h-8 text-[13px] text-muted hover:text-danger">Отключить</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-[14px] mt-4">Пока никто не подписан.</p>
+    {% endif %}
+  </section>
+
+  {# ---------- Telegram Business ---------- #}
+  <section class="card p-6">
+    <h2 class="font-display font-medium text-[17px]">Личный Telegram</h2>
+    <p class="text-[14px] text-muted mt-1">
+      Сообщения, которые клиенты пишут вам в личку, тоже становятся лидами. Новый собеседник — новый лид, его следующие сообщения добавляются в историю.
+    </p>
+    <ol class="text-[14px] mt-4 space-y-1.5 list-decimal pl-5 marker:text-muted">
+      <li>Telegram → <b>Настройки → Telegram для бизнеса → Чат-боты</b> (нужен Telegram Premium).</li>
+      <li>Укажите бота{% if bot %} <b>@{{ bot.username }}</b>{% endif %} и выберите, чьи чаты ему видеть.</li>
+      <li>Подключение появится здесь, а новые сообщения — в списке лидов с источником «Личный TG».</li>
+    </ol>
+    {% if connections %}
+    <ul class="mt-4 divide-y divide-line border-y border-line">
+      {% for c in connections %}
+      <li class="flex items-center gap-3 py-2.5 text-[14px]">
+        <span class="status-dot {{ 'bg-st-won' if c.is_enabled else 'bg-st-lost' }}"></span>
+        {{ c.owner_name or c.owner_user_id }}
+        <span class="ml-auto text-muted text-[12.5px]">{{ "подключён" if c.is_enabled else "отключён" }} · {{ c.updated_at|human_time }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-[14px] mt-4 flex items-center gap-2"><span class="status-dot bg-st-lost"></span> Личный аккаунт пока не подключён</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

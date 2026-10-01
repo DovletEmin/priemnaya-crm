@@ -1,0 +1,121 @@
+{% from "_macros.html" import icon, chip, source_badge, tg_logo %}
+<div id="lead" class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] items-start" hx-target="#lead" hx-swap="outerHTML">
+
+  {# ---------- левая колонка: суть заявки и история ---------- #}
+  <div class="min-w-0 space-y-6">
+    <section class="card p-6 sm:p-7">
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted">
+        <span class="font-mono">#{{ lead.id }}</span>
+        <span aria-hidden="true">·</span>
+        {{ source_badge(lead.source) }}
+        <span aria-hidden="true">·</span>
+        <span title="{{ lead.created_at|full_time }}">{{ lead.created_at|human_time }}</span>
+      </div>
+
+      <h1 class="font-display font-semibold text-[26px] sm:text-[30px] tracking-tight leading-tight mt-3 break-words">{{ lead.name }}</h1>
+
+      <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px]">
+        {% if lead.contact %}
+          {% set href = contact_href(lead.contact) %}
+          {% if href %}<a href="{{ href }}" target="_blank" rel="noopener" class="underline underline-offset-4 decoration-line hover:decoration-ink">{{ lead.contact }}</a>
+          {% else %}<span>{{ lead.contact }}</span>{% endif %}
+        {% else %}
+          <span class="text-muted">Контакт не указан</span>
+        {% endif %}
+        {% if lead.tg_user_id and not (lead.contact or "").startswith("@") %}
+          <a href="tg://user?id={{ lead.tg_user_id }}" class="inline-flex items-center gap-1.5 text-tg text-[14px]">{{ tg_logo("size-3.5") }} Открыть в Telegram</a>
+        {% endif %}
+      </div>
+
+      <div class="mt-6">
+        <div class="eyebrow mb-2">Запрос</div>
+        <p class="text-[16px] leading-relaxed whitespace-pre-line break-words">{{ lead.request or "—" }}</p>
+      </div>
+    </section>
+
+    <section class="card p-6 sm:p-7">
+      <h2 class="font-display font-medium text-[17px] mb-5">История</h2>
+
+      <form hx-post="/leads/{{ lead.id }}/notes" class="mb-6">
+        <label for="note" class="sr-only">Заметка</label>
+        <textarea id="note" name="text" rows="2" class="input" placeholder="Заметка: о чём договорились, что дальше…" required
+                  onkeydown="if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') this.form.requestSubmit()"></textarea>
+        <div class="flex items-center justify-between mt-2">
+          <span class="text-[12px] text-muted hidden sm:inline">Ctrl + Enter — сохранить</span>
+          <button class="btn btn-outline ml-auto">Добавить заметку</button>
+        </div>
+      </form>
+
+      <ol class="relative space-y-5 before:absolute before:left-[5px] before:top-2 before:bottom-2 before:w-px before:bg-line">
+        {% for note in lead.notes|reverse %}
+        <li class="relative pl-7">
+          {% if note.kind == "system" %}
+            <span class="absolute left-0 top-[7px] size-[11px] rounded-full bg-surface border-2 border-line"></span>
+            <p class="text-[14px] text-muted">{{ note.text }} <span class="text-[12px]" title="{{ note.created_at|full_time }}">· {{ note.created_at|human_time }}</span></p>
+          {% else %}
+            <span class="absolute left-0 top-[7px] size-[11px] rounded-full {{ 'bg-tg' if note.kind == 'client' else 'bg-ink' }}"></span>
+            <div class="text-[12.5px] text-muted mb-1">
+              {{ "Сообщение клиента" if note.kind == "client" else "Заметка" }} · <span title="{{ note.created_at|full_time }}">{{ note.created_at|human_time }}</span>
+            </div>
+            <p class="text-[15px] whitespace-pre-line break-words {{ 'rounded-lg bg-tg/8 px-3 py-2' if note.kind == 'client' }}">{{ note.text }}</p>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
+  </div>
+
+  {# ---------- правая колонка: статус, теги, действия ---------- #}
+  <aside class="space-y-6 xl:sticky xl:top-9">
+    <section class="card p-5">
+      <h2 class="eyebrow mb-3">Статус</h2>
+      <div class="grid grid-cols-2 gap-1.5" role="group" aria-label="Статус лида">
+        {% for st in Status.ORDER %}
+        <button hx-post="/leads/{{ lead.id }}/status" hx-vals='{"status": "{{ st }}"}'
+                class="flex items-center gap-2 rounded-lg border px-3 h-9 text-[14px] transition-colors
+                       {% if lead.status == st %}border-ink bg-ink text-white{% else %}border-line hover:border-ink/30{% endif %}"
+                {% if lead.status == st %}aria-pressed="true"{% endif %}>
+          <span class="status-dot bg-st-{{ st }}"></span>{{ Status.LABELS[st] }}
+        </button>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card p-5">
+      <h2 class="eyebrow mb-3">Теги</h2>
+      {% if lead.tags %}
+      <div class="flex flex-wrap gap-1.5 mb-4">
+        {% for t in lead.tags %}
+        <span class="chip pr-1" style="--c: {{ t.color }}">
+          <a href="/leads?tag={{ t.id }}" class="hover:underline">{{ t.name }}</a>
+          <button hx-post="/leads/{{ lead.id }}/tags/{{ t.id }}/remove" class="rounded p-0.5 hover:bg-black/10" title="Убрать тег «{{ t.name }}»" aria-label="Убрать тег {{ t.name }}">{{ icon("x", "size-3") }}</button>
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% set free = all_tags|rejectattr("id", "in", lead.tags|map(attribute="id")|list)|list %}
+      {% if free %}
+      <div class="flex flex-wrap gap-1.5 mb-3">
+        {% for t in free %}
+        <button hx-post="/leads/{{ lead.id }}/tags" hx-vals='{"name": {{ t.name|tojson }}}'
+                class="chip opacity-60 hover:opacity-100 transition-opacity" style="--c: {{ t.color }}" title="Добавить тег">{{ t.name }}</button>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <form hx-post="/leads/{{ lead.id }}/tags" class="flex gap-2">
+        <label for="new-tag" class="sr-only">Новый тег</label>
+        <input id="new-tag" name="name" class="input h-9 text-[14px]" placeholder="Новый тег" maxlength="50" required>
+        <button class="btn btn-outline px-3" aria-label="Добавить тег">{{ icon("plus") }}</button>
+      </form>
+    </section>
+
+    <section class="flex gap-2">
+      <a href="/leads/{{ lead.id }}/edit" class="btn btn-outline flex-1">{{ icon("pencil", "size-3.5") }} Изменить</a>
+      <form method="post" action="/leads/{{ lead.id }}/delete" onsubmit='return confirm({{ ("Удалить лида «" ~ lead.name ~ "» со всей историей?")|tojson }})'>
+        <button class="btn btn-danger">{{ icon("trash", "size-3.5") }} Удалить</button>
+      </form>
+    </section>
+  </aside>
+</div>

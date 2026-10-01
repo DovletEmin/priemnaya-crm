@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}{{ lead.name }}{% endblock %}
+{% block content %}
+<a href="/leads" class="inline-flex items-center gap-1.5 text-[14px] text-muted hover:text-ink mb-5">{{ icon("arrow-left") }} Все лиды</a>
+{% include "partials/lead_card.html" %}
+{% endblock %}

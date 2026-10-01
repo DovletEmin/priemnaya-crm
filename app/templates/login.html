@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Вход{% endblock %}
+{% block body %}
+<main class="min-h-dvh grid place-items-center px-4">
+  <div class="w-full max-w-[380px]">
+    <h1 class="font-display font-semibold text-[28px] tracking-tight">Приёмная</h1>
+    <p class="text-muted mt-1 mb-8">Заявки агентства из Telegram и вручную — в одном списке.</p>
+
+    <form method="post" action="/login" class="card p-6 space-y-4">
+      <div>
+        <label class="field-label" for="login">Логин</label>
+        <input class="input" id="login" name="login" value="{{ login or '' }}" autocomplete="username" required autofocus>
+      </div>
+      <div>
+        <label class="field-label" for="password">Пароль</label>
+        <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      {% if error %}<p class="field-error" role="alert">{{ error }}</p>{% endif %}
+      <button class="btn btn-primary w-full h-10">Войти</button>
+    </form>
+  </div>
+</main>
+{% endblock %}

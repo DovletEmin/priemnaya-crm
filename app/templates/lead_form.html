@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}{{ "Изменить лида" if lead else "Новый лид" }}{% endblock %}
+{% block content %}
+<a href="{{ '/leads/%d' % lead.id if lead else '/leads' }}" class="inline-flex items-center gap-1.5 text-[14px] text-muted hover:text-ink mb-5">
+  {{ icon("arrow-left") }} {{ "К лиду" if lead else "Все лиды" }}
+</a>
+
+<div class="max-w-[640px]">
+  <h1 class="font-display font-semibold text-[26px] tracking-tight mb-1">{{ "Изменить лида" if lead else "Новый лид" }}</h1>
+  <p class="text-muted mb-7">{{ "Поправьте данные — изменение попадёт в историю." if lead else "Для звонков, писем и встреч — всего, что пришло не через Telegram." }}</p>
+
+  <form method="post" action="{{ '/leads/%d/edit' % lead.id if lead else '/leads/new' }}" class="card p-6 sm:p-7 space-y-5" novalidate>
+    <div>
+      <label class="field-label" for="name">Имя</label>
+      <input class="input" id="name" name="name" value="{{ form.name or '' }}" placeholder="Анна Смирнова" maxlength="200" autofocus>
+      {% if errors.name %}<p class="field-error">{{ errors.name }}</p>{% endif %}
+    </div>
+    <div>
+      <label class="field-label" for="contact">Контакт</label>
+      <input class="input" id="contact" name="contact" value="{{ form.contact or '' }}" placeholder="+7 900 123-45-67, email или @username" maxlength="200">
+      {% if errors.contact %}<p class="field-error">{{ errors.contact }}</p>{% endif %}
+    </div>
+    <div>
+      <label class="field-label" for="request">Запрос</label>
+      <textarea class="input" id="request" name="request" rows="5" placeholder="Что нужно клиенту: задача, сроки, бюджет">{{ form.request or '' }}</textarea>
+    </div>
+
+    {% if not lead and all_tags %}
+    <fieldset>
+      <legend class="field-label">Теги</legend>
+      <div class="flex flex-wrap gap-2">
+        {% for t in all_tags %}
+        <label class="cursor-pointer">
+          <input type="checkbox" name="tags" value="{{ t.id }}" class="peer sr-only" {% if t.id in (form.tags or []) %}checked{% endif %}>
+          <span class="chip h-7 px-2.5 opacity-50 ring-1 ring-transparent peer-checked:opacity-100 peer-checked:ring-current peer-focus-visible:outline-2 peer-focus-visible:outline-tg transition" style="--c: {{ t.color }}">{{ t.name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    {% endif %}
+
+    <div class="flex gap-2 pt-1">
+      <button class="btn btn-primary">{{ "Сохранить изменения" if lead else "Добавить лида" }}</button>
+      <a href="{{ '/leads/%d' % lead.id if lead else '/leads' }}" class="btn btn-ghost">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
